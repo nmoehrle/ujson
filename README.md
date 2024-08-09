@@ -1,6 +1,6 @@
 # Mirco json library
 
-Allows reading and writing of json into std types.
+Allows json parsing and serialization of standard library types.
 
 
 ## API
@@ -22,8 +22,8 @@ struct value : public std::variant<
 >
 {};
 
-value read(std::string_view);
-std::string write(const value&);
+value parse(std::string_view);
+std::string serialize(const value&);
 }
 ```
 

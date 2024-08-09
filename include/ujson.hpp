@@ -34,8 +34,8 @@ struct value : public std::variant<
 >
 {};
 
-value read(std::string_view);
-std::string write(const value&);
+value parse(std::string_view);
+std::string serialize(const value&);
 }
 
 namespace ujson
@@ -72,10 +72,10 @@ inline void discard(std::string_view& str, std::string_view cs)
 }
 
 template <typename T>
-T read(std::string_view& str);
+T parse(std::string_view& str);
 
 template <>
-inline std::string read(std::string_view& str)
+inline std::string parse(std::string_view& str)
 {
     std::string ret;
     discard(str, '"');
@@ -98,7 +98,7 @@ inline std::string read(std::string_view& str)
 }
 
 template <>
-inline double read(std::string_view& str)
+inline double parse(std::string_view& str)
 {
     double ret;
     const auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), ret);
@@ -111,7 +111,7 @@ inline double read(std::string_view& str)
 }
 
 template <>
-inline bool read(std::string_view& str)
+inline bool parse(std::string_view& str)
 {
     if (str.front() == 't')
     {
@@ -129,16 +129,16 @@ inline bool read(std::string_view& str)
     }
 }
 template <>
-inline std::nullptr_t read(std::string_view& str)
+inline std::nullptr_t parse(std::string_view& str)
 {
     discard(str, "null");
     return nullptr;
 }
 
-value read(std::string_view& str);
+value parse(std::string_view& str);
 
 template <>
-inline object read(std::string_view& str)
+inline object parse(std::string_view& str)
 {
     auto ret = object();
     discard(str, '{');
@@ -151,10 +151,10 @@ inline object read(std::string_view& str)
             discard(str, ',');
         }
         fstrip(str);
-        const auto k = read<std::string>(str);
+        const auto k = parse<std::string>(str);
         discard(str, ':');
         fstrip(str);
-        ret.emplace(k, read(str));
+        ret.emplace(k, parse(str));
         fstrip(str);
     }
     discard(str, '}');
@@ -162,7 +162,7 @@ inline object read(std::string_view& str)
 }
 
 template <>
-inline array read(std::string_view& str)
+inline array parse(std::string_view& str)
 {
     auto ret = array();
     discard(str, '[');
@@ -175,14 +175,14 @@ inline array read(std::string_view& str)
             discard(str, ',');
         }
         fstrip(str);
-        ret.emplace_back(read(str));
+        ret.emplace_back(parse(str));
         fstrip(str);
     }
     discard(str, ']');
     return ret;
 }
 
-inline value read(std::string_view& str)
+inline value parse(std::string_view& str)
 {
     fstrip(str);
     if (str.empty())
@@ -192,20 +192,20 @@ inline value read(std::string_view& str)
     switch(str.front())
     {
         case '{':
-            return value(read<object>(str));
+            return value(parse<object>(str));
         case '[':
-            return value(read<array>(str));
+            return value(parse<array>(str));
         case '"':
-            return value(read<std::string>(str));
+            return value(parse<std::string>(str));
         case 't':
         case 'f':
-            return value(read<bool>(str));
+            return value(parse<bool>(str));
         case 'n':
-            return value(read<std::nullptr_t>(str));
+            return value(parse<std::nullptr_t>(str));
         default:
             if (str.front() == '-' || ('0' <= str.front() && str.front() <= '9'))
             {
-                const auto d = read<double>(str);
+                const auto d = parse<double>(str);
                 double i;
                 if (std::modf(d, &i) == 0.0)
                 {
@@ -223,7 +223,7 @@ inline value read(std::string_view& str)
     }
 }
 
-inline std::string write(const value& val, int indent = 0)
+inline std::string serialize(const value& val, int indent = 0)
 {
     std::string ret;
     struct {
@@ -240,7 +240,7 @@ inline std::string write(const value& val, int indent = 0)
                 {
                     ret += ",\n";
                 }
-                ret += std::string(indent, ' ') + k + ": " + write(v, indent);
+                ret += std::string(indent, ' ') + k + ": " + serialize(v, indent);
             }
             indent -= 4;
             ret += '\n' + std::string(indent, ' ') + '}';
@@ -256,7 +256,7 @@ inline std::string write(const value& val, int indent = 0)
                 {
                     ret += ",\n";
                 }
-                ret += std::string(indent, ' ') + write(e, indent);
+                ret += std::string(indent, ' ') + serialize(e, indent);
             }
             indent -= 4;
             ret += '\n' + std::string(indent, ' ') + ']';
@@ -305,13 +305,13 @@ inline std::string write(const value& val, int indent = 0)
 }
 } // namespace detail
 
-inline value read(std::string_view str)
+inline value parse(std::string_view str)
 {
-    return detail::read(str);
+    return detail::parse(str);
 }
 
-inline std::string write(const value& val)
+inline std::string serialize(const value& val)
 {
-    return detail::write(val) + '\n';
+    return detail::serialize(val) + '\n';
 }
 } // namespace ujson
