@@ -7,6 +7,5 @@ int main()
 {
     std::stringstream ss;
     ss << std::cin.rdbuf();
-    const auto json = ujson::read(ss.str());
-    std::cout << write(json);
+    std::cout << ujson::write(ujson::read(ss.str()));
 }
