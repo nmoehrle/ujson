@@ -23,7 +23,7 @@ namespace ujson
 struct value;
 using object = std::map<std::string, value>;
 using array = std::vector<value>;
-struct value : public std::variant<
+using variant = std::variant<
     std::nullptr_t,
     object,
     array,
@@ -31,12 +31,16 @@ struct value : public std::variant<
     double,
     int,
     bool
->
-{};
+>;
+
+struct value : public variant {
+    using variant::operator=;
+    using variant::variant;
+};
 
 value parse(std::string_view);
 std::string serialize(const value&);
-}
+} // namespace ujson
 
 namespace ujson
 {
@@ -240,7 +244,7 @@ inline std::string serialize(const value& val, int indent = 0)
                 {
                     ret += ",\n";
                 }
-                ret += std::string(indent, ' ') + k + ": " + serialize(v, indent);
+                ret += std::string(indent, ' ') + '"' +  k + "\": " + serialize(v, indent);
             }
             indent -= 4;
             ret += '\n' + std::string(indent, ' ') + '}';
@@ -263,7 +267,7 @@ inline std::string serialize(const value& val, int indent = 0)
         }
         void operator()(const std::string& str)
         {
-            ret += str;
+            ret += '"' + str + '"';
         }
         void operator()(double d)
         {

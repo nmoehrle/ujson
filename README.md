@@ -11,7 +11,7 @@ namespace ujson
 struct value;
 using object = std::map<std::string, value>;
 using array = std::vector<value>;
-struct value : public std::variant<
+using variant = std::variant<
     std::nullptr_t,
     object,
     array,
@@ -19,12 +19,16 @@ struct value : public std::variant<
     double,
     int,
     bool
->
-{};
+>;
+
+struct value : public variant {
+    using variant::operator=;
+    using variant::variant;
+};
 
 value parse(std::string_view);
 std::string serialize(const value&);
-}
+} // namespace ujson
 ```
 
 ## Limitations
