@@ -11,30 +11,28 @@
 #include <charconv>
 #include <cmath>
 #include <limits>
-#include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <unordered_map>
+#include <map>
 #include <variant>
 #include <vector>
 
 namespace ujson
 {
-struct object;
-struct array;
-using value = std::variant<
+
+struct value;
+using object = std::map<std::string, value>;
+using array = std::vector<value>;
+struct value : public std::variant<
     std::nullptr_t,
-    std::unique_ptr<object>,
-    std::unique_ptr<array>,
+    object,
+    array,
     std::string,
     double,
     int,
     bool
->;
-class object : public std::unordered_map<std::string, value>
-{};
-class array : public std::vector<value>
+>
 {};
 
 value read(std::string_view str);
@@ -141,9 +139,9 @@ inline std::nullptr_t read(std::string_view& str)
 value read(std::string_view& str);
 
 template <>
-inline std::unique_ptr<object> read(std::string_view& str)
+inline object read(std::string_view& str)
 {
-    auto ret = std::make_unique<object>();
+    auto ret = object();
     discard(str, '{');
     fstrip(str);
     int i = 0;
@@ -157,7 +155,7 @@ inline std::unique_ptr<object> read(std::string_view& str)
         const auto k = read<std::string>(str);
         discard(str, ':');
         fstrip(str);
-        ret->emplace(k, read(str));
+        ret.emplace(k, read(str));
         fstrip(str);
     }
     discard(str, '}');
@@ -165,9 +163,9 @@ inline std::unique_ptr<object> read(std::string_view& str)
 }
 
 template <>
-inline std::unique_ptr<array> read(std::string_view& str)
+inline array read(std::string_view& str)
 {
-    auto ret = std::make_unique<array>();
+    auto ret = array();
     discard(str, '[');
     fstrip(str);
     int i = 0;
@@ -178,7 +176,7 @@ inline std::unique_ptr<array> read(std::string_view& str)
             discard(str, ',');
         }
         fstrip(str);
-        ret->emplace_back(read(str));
+        ret.emplace_back(read(str));
         fstrip(str);
     }
     discard(str, ']');
@@ -195,9 +193,9 @@ inline value read(std::string_view& str)
     switch(str.front())
     {
         case '{':
-            return value(read<std::unique_ptr<object>>(str));
+            return value(read<object>(str));
         case '[':
-            return value(read<std::unique_ptr<array>>(str));
+            return value(read<array>(str));
         case '"':
             return value(read<std::string>(str));
         case 't':
@@ -232,12 +230,12 @@ inline std::string write(const value& val, int indent = 0)
     struct {
         std::string& ret;
         int& indent;
-        void operator()(const std::unique_ptr<object>& obj)
+        void operator()(const object& obj)
         {
             ret += "{\n";
             int i = 0;
             indent += 4;
-            for (const auto& [k, v] : *obj)
+            for (const auto& [k, v] : obj)
             {
                 if (i++)
                 {
@@ -248,12 +246,12 @@ inline std::string write(const value& val, int indent = 0)
             indent -= 4;
             ret += '\n' + std::string(indent, ' ') + '}';
         }
-        void operator()(const std::unique_ptr<array>& arr)
+        void operator()(const array& arr)
         {
             ret += "[\n";
             int i = 0;
             indent += 4;
-            for (const auto& e : *arr)
+            for (const auto& e : arr)
             {
                 if (i++)
                 {
