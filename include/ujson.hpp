@@ -20,7 +20,6 @@
 
 namespace ujson
 {
-
 struct value;
 using object = std::map<std::string, value>;
 using array = std::vector<value>;
@@ -35,8 +34,8 @@ struct value : public std::variant<
 >
 {};
 
-value read(std::string_view str);
-void write(value val, std::string& str);
+value read(std::string_view);
+std::string write(const value&);
 }
 
 namespace ujson
