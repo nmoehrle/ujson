@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2024, Nils Moehrle
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE file for details.
+ */
+
 #pragma once
 
 #include <charconv>
