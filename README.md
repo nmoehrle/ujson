@@ -33,6 +33,6 @@ std::string serialize(const value&);
 
 ## Limitations
 - Requires a standard library implementation that allows incomplete types as
-  values for `std::map` which is not required by the standard.
-- No support for 64bit integers
-- Requires the entire json to fit into memory
+  values for `std::map` which is not required by the standard
+- No support for 64bit integers.
+- Requires the entire json to fit into memory.
