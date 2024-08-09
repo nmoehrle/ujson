@@ -7,4 +7,5 @@ set(CMAKE_CXX_STANDARD 20)
 add_library(ujson INTERFACE include/ujson.hpp)
 target_include_directories(ujson INTERFACE include)
 
+enable_testing()
 add_subdirectory(tests)
