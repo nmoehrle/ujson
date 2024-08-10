@@ -85,7 +85,7 @@ inline std::string parse(std::string_view& str)
     std::string ret;
     discard(str, '"');
     bool escape = false;
-    while (!str.empty() && !escape && str.front() != '"')
+    while (!str.empty() && (escape || str.front() != '"'))
     {
         if (!escape && str.front() == '\\')
         {
@@ -94,9 +94,9 @@ inline std::string parse(std::string_view& str)
         else
         {
             escape = false;
-            ret += str.front();
-            str.remove_prefix(1);
         }
+        ret += str.front();
+        str.remove_prefix(1);
     }
     discard(str, '"');
     return ret;
