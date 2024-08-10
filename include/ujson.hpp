@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <array>
 #include <charconv>
 #include <cmath>
 #include <limits>
