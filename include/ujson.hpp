@@ -107,12 +107,12 @@ inline double parse(std::string_view& str)
 {
     double ret;
     const auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), ret);
-    if (ec != std::errc())
+    if (ec == std::errc())
     {
-        throw std::runtime_error("Could not parse " + std::string(str) + " as double at -" +  std::to_string(str.size()));
+        str.remove_prefix(ptr - str.data());
+        return ret;
     }
-    str.remove_prefix(ptr - str.data());
-    return ret;
+    throw std::runtime_error("Could not parse " + std::string(str) + " as double at -" +  std::to_string(str.size()));
 }
 
 template <>
@@ -280,21 +280,27 @@ inline std::string serialize(const value& val, int indent = 0)
                 std::chars_format::fixed,
                 std::numeric_limits<double>::max_digits10
             );
-            if (ec != std::errc())
+            if (ec == std::errc())
+            {
+                ret += std::string_view(buf.data(), ptr - buf.data());
+            }
+            else
             {
                 throw std::runtime_error("Could not convert double to chars");
             }
-            ret += std::string_view(buf.data(), ptr - buf.data());
         }
         void operator()(int i)
         {
             std::array<char, 32> buf = {};
             const auto [ptr, ec] = std::to_chars(buf.data(), buf.data() + buf.size(), i);
-            if (ec != std::errc())
+            if (ec == std::errc())
+            {
+                ret += std::string_view(buf.data(), ptr - buf.data());
+            }
+            else
             {
                 throw std::runtime_error("Could not convert int to chars");
             }
-            ret += std::string_view(buf.data(), ptr - buf.data());
         }
         void operator()(bool b)
         {
