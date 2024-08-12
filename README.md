@@ -35,3 +35,4 @@ std::string serialize(const value&);
 - Requires a standard library implementation that allows incomplete types as
   values for `std::map` which is not required by the standard
 - No support for 64bit integers.
+- No support for unicode escape sequences yet.

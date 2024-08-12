@@ -6,7 +6,7 @@ int main()
 {
     auto obj = ujson::object();
     obj["s"] = "str";
-    obj["e"] = "\\\"str";
+    obj["e"] = "\"str";
     obj["i"] = 1337;
     obj["d"] = 3.14;
     obj["t"] = true;

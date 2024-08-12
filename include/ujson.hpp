@@ -76,26 +76,93 @@ inline void discard(std::string_view& str, std::string_view cs)
     }
 }
 
+[[noreturn]] inline void throwUnexpectedCharacter(const std::string_view& str)
+{
+    throw std::runtime_error("Unexpected character " + std::string(1, str.front()) + " at -" + std::to_string(str.size()));
+}
+
 template <typename T>
 T parse(std::string_view& str);
+
+inline char detain(std::string_view& str)
+{
+    switch(str.front())
+    {
+        case '"':
+            return '"';
+        case '\\':
+            return '\\';
+        case '/':
+            return '/';
+        case 'b':
+            return '\b';
+        case 'f':
+            return '\f';
+        case 'n':
+            return '\n';
+        case 'r':
+            return '\r';
+        case 't':
+            return '\t';
+        case 'u':
+            throw std::runtime_error("No unicode support for strings yet");
+        default:
+            throwUnexpectedCharacter(str);
+    }
+}
+
+inline const char* escape(const char* ptr)
+{
+    switch(*ptr)
+    {
+        case '"':
+            return "\\\"";
+        case '\\':
+            return "\\\\";
+        case '/':
+            return "\\/";
+        case '\b':
+            return "\\b";
+        case '\f':
+            return "\\f";
+        case '\n':
+            return "\\n";
+        case '\r':
+            return "\\r";
+        case '\t':
+            return "\\t";
+        default:
+            if (*ptr & 0x80)
+            {
+                throw std::runtime_error("No unicode support for strings yet");
+            }
+            return nullptr;
+
+    }
+}
 
 template <>
 inline std::string parse(std::string_view& str)
 {
     std::string ret;
     discard(str, '"');
-    bool escape = false;
-    while (!str.empty() && (escape || str.front() != '"'))
+    bool escaping = false;
+    while (!str.empty() && (escaping|| str.front() != '"'))
     {
-        if (!escape && str.front() == '\\')
+        if (escaping)
         {
-            escape = true;
+            ret += detain(str);
+            escaping = false;
+        }
+        else if (str.front() == '\\')
+        {
+            escaping = true;
         }
         else
         {
-            escape = false;
+            escaping = false;
+            ret += str.front();
         }
-        ret += str.front();
         str.remove_prefix(1);
     }
     discard(str, '"');
@@ -130,7 +197,7 @@ inline bool parse(std::string_view& str)
     }
     else
     {
-        throw std::runtime_error("Unexpected character " + std::string(1, str.front()) + " at -" + std::to_string(str.size()));
+        throwUnexpectedCharacter(str);
     }
 }
 template <>
@@ -223,7 +290,7 @@ inline value parse(std::string_view& str)
             }
             else
             {
-                throw std::runtime_error("Unexpected character " + std::to_string(str.front()) + " at -" + std::to_string(str.size()));
+                throwUnexpectedCharacter(str);
             }
     }
 }
@@ -268,7 +335,19 @@ inline std::string serialize(const value& val, int indent = 0)
         }
         void operator()(const std::string& str)
         {
-            ret += '"' + str + '"';
+            ret += '"';
+            for (std::size_t i = 0; i < str.size(); ++i)
+            {
+                if (const auto ptr = escape(str.data() + i))
+                {
+                    ret += ptr;
+                }
+                else
+                {
+                    ret += str[i];
+                }
+            }
+            ret += '"';
         }
         void operator()(double d)
         {
