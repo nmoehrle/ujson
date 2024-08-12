@@ -1,6 +1,6 @@
 # Mirco json library
 
-Allows json parsing and serialization of standard library types.
+Allows json parsing and serialization of standard library types with single header.
 
 
 ## API
